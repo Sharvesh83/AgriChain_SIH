@@ -1,78 +1,62 @@
-// app/screens/FarmerDetails.jsx
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import Background from "../components/Background";
+import Glass from "../components/Glass";
+import { ui } from "../components/UI";
 
 export default function FarmerDetails() {
-  const [geoLocation, setGeoLocation] = useState("");
-  const [harvestDate, setHarvestDate] = useState("");
-  const [notes, setNotes] = useState("");
-
   const router = useRouter();
+  const [notes, setNotes] = useState('');
+
+  const batch = {
+    id: "BATCH1001",
+    crop: "Rice — Basmati 1121",
+    seed: "2025-06-01",
+    harvest: "2025-09-15",
+    weight: 500,
+    grade: "A",
+    gps: "11.012,77.001"
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Farmer Details</Text>
+    <Background>
+      <Glass scrollable>
+        <Text style={ui.h1}>Farmer</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Geo Tag (Village/Coordinates)"
-        value={geoLocation}
-        onChangeText={setGeoLocation}
-      />
+        <View style={ui.cameraCard}>
+          <Text style={ui.cameraTitle}>📍 GeoTag Photo</Text>
+          <Text style={ui.cameraHint}>Photo with GPS for traceability</Text>
+        </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Harvest Date (dd-mm-yyyy)"
-        value={harvestDate}
-        onChangeText={setHarvestDate}
-      />
+        <Text style={ui.h2}>Batch Summary</Text>
+        <View style={ui.card}>
+          <Text style={ui.cardTitle}>Batch ID: {batch.id}</Text>
+          <Text style={ui.cardMeta}>Crop: {batch.crop}</Text>
+          <Text style={ui.cardMeta}>Seed Date: {batch.seed}</Text>
+          <Text style={ui.cardMeta}>Harvest Date: {batch.harvest}</Text>
+          <Text style={ui.cardMeta}>Weight: {batch.weight}kg</Text>
+          <Text style={ui.cardMeta}>Grade: {batch.grade}</Text>
+          <Text style={ui.cardMeta}>GPS: {batch.gps}</Text>
+        </View>
 
-      <TextInput
-        style={[styles.input, { height: 100 }]}
-        placeholder="Additional Notes"
-        value={notes}
-        onChangeText={setNotes}
-        multiline
-      />
+        <Text style={ui.h2}>Additional Information</Text>
+        <TextInput 
+          style={[ui.input, ui.inputLarge]} 
+          placeholder="Notes / Description" 
+          value={notes} 
+          onChangeText={setNotes} 
+          multiline 
+        />
 
-      <TouchableOpacity style={styles.button} onPress={() => router.push("/screens/DistributorForm")}>
-        <Text style={styles.buttonText}>Next: Distributor</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={ui.btn} onPress={() => router.push('/screens/DistributorPurchase')}>
+          <Text style={ui.btnText}>Deploy Batch</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={ui.btnGhost} onPress={() => router.push('/screens/FarmerDashboard')}>
+          <Text style={ui.btnTextGhost}>Back to Dashboard</Text>
+        </TouchableOpacity>
+      </Glass>
+    </Background>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: "#f0f4f0",
-    padding: 20,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
-  input: {
-    width: "100%",
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: "#ccc",
-  },
-  button: {
-    backgroundColor: "#2196F3",
-    padding: 15,
-    borderRadius: 10,
-    width: "100%",
-    alignItems: "center",
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-});
