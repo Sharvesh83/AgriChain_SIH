@@ -1,4 +1,3 @@
-// app/screens/DistributorDetails.jsx
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
@@ -7,7 +6,6 @@ export default function DistributorDetails() {
   const [transportMode, setTransportMode] = useState("");
   const [arrivalDate, setArrivalDate] = useState("");
   const [remarks, setRemarks] = useState("");
-
   const router = useRouter();
 
   return (
@@ -44,17 +42,8 @@ export default function DistributorDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: "#f0f4f0",
-    padding: 20,
-    alignItems: "center",
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-  },
+  container: { flexGrow: 1, backgroundColor: "#f0f4f0", padding: 20, alignItems: "center" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
   input: {
     width: "100%",
     backgroundColor: "#fff",
@@ -71,8 +60,5 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  buttonText: { color: "#fff", fontWeight: "bold" },
 });
