@@ -1,7 +1,6 @@
-const User = require("../models/User");
+const User = require("../models/userModel");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
 
 const registerUser = async (req, res) => {
   try {
@@ -45,6 +44,8 @@ const registerUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+// LOGIN
 const loginUser = async (req, res) => {
   try {
     const { mobile, password } = req.body;
@@ -53,18 +54,15 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Mobile and password are required" });
     }
 
- 
     const user = await User.findOne({ mobile });
     if (!user) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-
 
     const token = jwt.sign(
       { id: user._id, role: user.role },

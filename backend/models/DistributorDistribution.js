@@ -1,8 +1,9 @@
 const mongoose = require("mongoose");
 
-const RetailerDistributionSchema = new mongoose.Schema({
+const DistributorDistributionSchema = new mongoose.Schema({
   distributorId: { type: String, required: true },
-  lotId: { type: String, required: true }, // linked to DistributorBatch
+  batchId: { type: String, required: true },   // Farmer batchId for traceability
+  lotId: { type: String, required: true },  
   pricePerKg: { type: Number, required: true },
   retailerDistribution: [
     {
@@ -12,4 +13,4 @@ const RetailerDistributionSchema = new mongoose.Schema({
   ]
 }, { timestamps: true });
 
-module.exports = mongoose.model("RetailerDistribution", RetailerDistributionSchema);
+module.exports = mongoose.model("DistributorDistribution", DistributorDistributionSchema);

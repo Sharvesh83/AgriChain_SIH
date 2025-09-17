@@ -1,12 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/qrC");
+const qrController = require("../controllers/qrController"); // make sure path is correct
 
-// Routes
-router.post("/", controller.createStock);
-router.get("/", controller.getStocks);
-router.get("/:retailerId", controller.getStockByRetailer);
-router.put("/:retailerId", controller.updateStock);
-router.delete("/:retailerId", controller.deleteStock);
+// Route to create stock with QR
+router.post("/stock", qrController.createStock);
+
+// Route to resolve QR scan
+router.get("/scan/:retailerId/:subBatchId", qrController.getProductByQR);
 
 module.exports = router;

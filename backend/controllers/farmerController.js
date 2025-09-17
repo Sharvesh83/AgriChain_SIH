@@ -1,6 +1,6 @@
-const FarmerBatch = require("../models/farmerM");
+const FarmerBatch = require("../models/farmerModel");
 
-// CREATE batch
+
 exports.createBatch = async (req, res) => {
   try {
     const batch = new FarmerBatch(req.body);
