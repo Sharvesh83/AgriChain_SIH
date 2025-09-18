@@ -1,7 +1,7 @@
 const { ethers } = require("ethers");
 const ipfs = require("../config/ipfs");
 
-const contractABI = require("../../artifacts/contracts/SupplyChain.sol/SupplyChain.json").abi;
+const contractABI = require("../artifacts/contracts/SupplyChain.sol/SupplyChain.json").abi;
 const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 // connect to Hardhat local blockchain

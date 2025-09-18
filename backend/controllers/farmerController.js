@@ -1,14 +1,15 @@
+const fs = require("fs");
 const FarmerBatch = require("../models/farmerModel");
 const ipfs = require("../config/ipfs");
+const BlockchainService = require("../services/blockchainservices"); // corrected capitalization
 
-const supplyChain = require("../services/blockchainservices");
-
+// Add batch to blockchain directly
 async function addBatch(req, res) {
   try {
     const { farmerId, ipfsCid, quantity, price } = req.body;
 
     // call smart contract
-    const tx = await supplyChain.addBatch(farmerId, ipfsCid, quantity, price);
+    const tx = await BlockchainService.addBatch(farmerId, ipfsCid, quantity, price);
     await tx.wait();
 
     res.json({ success: true, txHash: tx.hash });
@@ -32,24 +33,23 @@ exports.createBatch = async (req, res) => {
       gpsCoordinates,
       farmAddress,
       notes,
+      base64Image,
     } = req.body;
 
-    // handle photo (base64 string or file buffer)
     let imageCID = null;
+
+    // Handle file upload or base64 image
     if (req.file) {
-      const { path } = req.file;
-      const fileAdded = await ipfs.add(fs.readFileSync(path));
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const fileAdded = await ipfs.add(fileBuffer);
       imageCID = fileAdded.cid.toString();
-    } else if (req.body.base64Image) {
-      const buffer = Buffer.from(
-        req.body.base64Image.replace(/^data:image\/\w+;base64,/, ""),
-        "base64"
-      );
+    } else if (base64Image) {
+      const buffer = Buffer.from(base64Image.replace(/^data:image\/\w+;base64,/, ""), "base64");
       const fileAdded = await ipfs.add(buffer);
       imageCID = fileAdded.cid.toString();
     }
 
-    // save to blockchain (example: store CID + batchId)
+    // Store on blockchain (batchId + imageCID + farmerId)
     const blockchainHash = await BlockchainService.storeBatchOnChain({
       batchId,
       farmerId,
@@ -59,6 +59,7 @@ exports.createBatch = async (req, res) => {
       gpsCoordinates,
     });
 
+    // Save to MongoDB
     const newBatch = new FarmerBatch({
       farmerId,
       batchId,
@@ -87,7 +88,7 @@ exports.createBatch = async (req, res) => {
 // Get all batches for a farmer
 exports.getBatches = async (req, res) => {
   try {
-    const farmerId = req.params.farmerId;
+    const { farmerId } = req.params;
     const batches = await FarmerBatch.find({ farmerId });
     res.json(batches);
   } catch (err) {

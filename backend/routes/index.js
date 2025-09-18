@@ -16,5 +16,6 @@ router.use("/farmers", farmerRoutes);
 router.use("/qr", qrR);
 router.use("/retailers", retailerRoutes);
 router.use("/users", userRoutes);
+router.use("/blockchain", require("./blockchainRoutes")); // Added blockchain routes
 
 module.exports = router;
