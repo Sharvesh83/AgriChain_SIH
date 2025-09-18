@@ -1,6 +1,21 @@
 const FarmerBatch = require("../models/farmerModel");
 const ipfs = require("../config/ipfs");
-//const BlockchainService = require("../services/blockchainService"); // you must implement
+
+const supplyChain = require("../services/blockchainservices");
+
+async function addBatch(req, res) {
+  try {
+    const { farmerId, ipfsCid, quantity, price } = req.body;
+
+    // call smart contract
+    const tx = await supplyChain.addBatch(farmerId, ipfsCid, quantity, price);
+    await tx.wait();
+
+    res.json({ success: true, txHash: tx.hash });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
 
 // Create a new batch
 exports.createBatch = async (req, res) => {
