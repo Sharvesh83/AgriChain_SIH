@@ -1,20 +1,23 @@
 const mongoose = require("mongoose");
 
-const FarmerBatchSchema = new mongoose.Schema({
-  farmerId: { type: String, required: true },
-  batchId: { type: String, required: true, unique: true },
-  farmLocation: {
-    latitude: { type: Number, required: true },
-    longitude: { type: Number, required: true }
+const FarmerBatchSchema = new mongoose.Schema(
+  {
+    farmerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    batchId: { type: String, required: true, unique: true }, // e.g. BATCH1001
+    cropType: { type: String, required: true },
+    variety: { type: String },
+    seedSownDate: { type: Date },
+    harvestDate: { type: Date },
+    totalWeightKg: { type: Number, required: true },
+    remainingWeightKg: { type: Number, required: true },
+    qualityGrade: { type: String, enum: ["A", "B", "C"], required: true },
+    gpsCoordinates: { type: String }, // lat,lng
+    farmAddress: { type: String },
+    imageCID: { type: String }, // stored in IPFS
+    blockchainHash: { type: String }, // tx hash from blockchain
+    notes: { type: String },
   },
-  productType: { type: String, required: true },
-  variety: { type: String, required: true },
-  harvestDate: { type: Date, required: true },
-  seedsSownDate: { type: Date, required: true },
-  totalWeightKg: { type: Number, required: true },
-  qualityGrade: { type: String, required: true },
-  basePricePerKg: { type: Number, required: true },
-  notes: { type: String }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("FarmerBatch", FarmerBatchSchema);

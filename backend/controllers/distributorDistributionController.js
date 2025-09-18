@@ -1,59 +1,40 @@
-const DistributorDistribution = require("../models/DistributorDistribution");
+const DistributorBatch = require("../models/distributorBatch");
+const DistributorLot = require("../models/distributorLot");
 
-// Create distribution
-exports.createDistribution = async (req, res) => {
+exports.splitBatch = async (req, res) => {
   try {
-    const distribution = new DistributorDistribution(req.body);
-    await distribution.save();
-    res.status(201).json(distribution);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+    const { distributorBatchId, lots } = req.body;
+    // lots = [ { lotId, retailerId, quantity, salePricePerKg } ]
 
-// Get all distributions
-exports.getAllDistributions = async (req, res) => {
-  try {
-    const distributions = await DistributorDistribution.find();
-    res.status(200).json(distributions);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    const batch = await DistributorBatch.findById(distributorBatchId);
+    if (!batch) return res.status(404).json({ message: "Batch not found" });
 
-// Get single distribution
-exports.getDistributionById = async (req, res) => {
-  try {
-    const distribution = await DistributorDistribution.findById(req.params.id);
-    if (!distribution) return res.status(404).json({ error: "Record not found" });
-    res.status(200).json(distribution);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    let totalQty = 0;
+    const lotDocs = [];
 
-// Update distribution
-exports.updateDistribution = async (req, res) => {
-  try {
-    const distribution = await DistributorDistribution.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    if (!distribution) return res.status(404).json({ error: "Record not found" });
-    res.status(200).json(distribution);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+    for (let lot of lots) {
+      totalQty += lot.quantity;
+      const newLot = new DistributorLot({
+        lotId: lot.lotId,
+        distributorBatchId,
+        retailerId: lot.retailerId,
+        quantity: lot.quantity,
+        salePricePerKg: lot.salePricePerKg,
+      });
+      await newLot.save();
+      lotDocs.push(newLot._id);
+    }
 
-// Delete distribution
-exports.deleteDistribution = async (req, res) => {
-  try {
-    const distribution = await DistributorDistribution.findByIdAndDelete(req.params.id);
-    if (!distribution) return res.status(404).json({ error: "Record not found" });
-    res.status(200).json({ message: "Deleted successfully" });
+    if (totalQty > batch.currentRemaining) {
+      return res.status(400).json({ message: "Not enough stock to split" });
+    }
+
+    batch.currentRemaining -= totalQty;
+    batch.lots.push(...lotDocs);
+    await batch.save();
+
+    res.status(200).json({ success: true, lots: lotDocs, batch });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ success: false, message: err.message });
   }
 };

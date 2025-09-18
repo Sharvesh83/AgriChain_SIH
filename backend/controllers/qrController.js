@@ -1,48 +1,34 @@
-// CREATE stock record with QR
-exports.createStock = async (req, res) => {
+const RetailerInventory = require("../models/retailerModel");
+const DistributorLot = require("../models/distributorLot"); // assuming you have this
+const FarmerBatch = require("../models/farmerModel"); // assuming you have this
+
+exports.decodeQR = async (req, res) => {
   try {
-    let stock = new RetailerStock(req.body);
+    const { qrData } = req.body; // this is the decoded string from QR
 
-    // Generate QR for each inventory item if not already done
-    for (let i = 0; i < stock.inventory.length; i++) {
-      const inv = stock.inventory[i];
-      if (!inv.qrGenerated) {
-        const qrData = `https://agrichain.io/qr/${stock.retailerId}/${inv.subBatchId}`;
-        const qrImage = await QRCode.toDataURL(qrData);
+    // Parse QR contents
+    const data = JSON.parse(qrData);
 
-        inv.qrGenerated = true;
-        inv.qrLink = qrData;
-        inv.qrImageBase64 = qrImage; // optional for displaying in app
-      }
-    }
+    // Fetch full chain history
+    const inv = await RetailerInventory.findOne({ _id: data.inventoryId })
+      .populate("retailerId lotId")
+      .exec();
+    if (!inv) return res.status(404).json({ success: false, error: "Inventory not found" });
 
-    await stock.save();
-    res.status(201).json({ message: "Retailer stock created successfully", data: stock });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
+    const lot = await DistributorLot.findById(inv.lotId).populate('farmerBatch').exec();
+    if (!lot) return res.status(404).json({ success: false, error: "Distributor lot not found" });
 
-// CUSTOMER-facing API → resolve QR scan
-exports.getProductByQR = async (req, res) => {
-  try {
-    const { retailerId, subBatchId } = req.params;
-    const stock = await RetailerStock.findOne(
-      { retailerId, "inventory.subBatchId": subBatchId },
-      { "inventory.$": 1, retailerId: 1 }
-    );
-
-    if (!stock) return res.status(404).json({ error: "Product not found" });
-
-    // For full traceability, you’d also fetch:
-    // - FarmerBatch (via stock.inventory[0].batchId)
-    // - Distributor lot (via stock.inventory[0].lotId)
+    const farmer = await FarmerBatch.findById(lot.farmerBatch).exec();
 
     res.json({
-      retailerId: stock.retailerId,
-      product: stock.inventory[0]
+      success: true,
+      history: {
+        farmer,
+        distributor: lot,
+        retailer: inv
+      }
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
-  }a
+    res.status(500).json({ success: false, error: err.message });
+  }
 };

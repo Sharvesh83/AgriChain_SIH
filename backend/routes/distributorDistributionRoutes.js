@@ -1,12 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const distributionController = require("../controllers/distributorDistributionController");
+const { splitBatch } = require("../controllers/distributorDistributionController");
 
-router.post("/", distributionController.createDistribution);
-router.get("/", distributionController.getAllDistributions);
-router.get("/:id", distributionController.getDistributionById);
-router.put("/:id", distributionController.updateDistribution);
-router.delete("/:id", distributionController.deleteDistribution);
+// POST /api/distributor/split
+router.post("/split", splitBatch);
 
 module.exports = router;
-

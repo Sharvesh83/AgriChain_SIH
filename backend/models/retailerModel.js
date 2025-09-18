@@ -1,15 +1,12 @@
 const mongoose = require("mongoose");
 
-const RetailerBatchSchema = new mongoose.Schema({
-  retailerId: { type: String, required: true },
-  receivedBatchId: { type: String, required: true }, // Original Farmer batchId
-  lotId: { type: String, required: true },           // Distributor lotId
-  subBatchId: { type: String, required: true, unique: true },
+const retailerInventorySchema = new mongoose.Schema({
+  retailerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  lotId: { type: mongoose.Schema.Types.ObjectId, ref: "DistributorLot", required: true },
   quantity: { type: Number, required: true },
-  pricePerUnit: { type: Number, required: true },
-  qualityCheck: { type: String },
-  handlingNotes: { type: String },
-  receivedDate: { type: Date, default: Date.now }
+  pricePerKg: { type: Number, required: true },
+  qrCode: { type: String }, // QR image or data URI
+  createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model("RetailerBatch", RetailerBatchSchema);
+module.exports = mongoose.model("RetailerInventory", retailerInventorySchema);

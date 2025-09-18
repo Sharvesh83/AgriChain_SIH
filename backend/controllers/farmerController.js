@@ -1,58 +1,80 @@
 const FarmerBatch = require("../models/farmerModel");
+const ipfs = require("../config/ipfs");
+//const BlockchainService = require("../services/blockchainService"); // you must implement
 
-
+// Create a new batch
 exports.createBatch = async (req, res) => {
   try {
-    const batch = new FarmerBatch(req.body);
-    await batch.save();
-    res.status(201).json({ message: "Batch created successfully", data: batch });
+    const {
+      farmerId,
+      batchId,
+      cropType,
+      variety,
+      seedSownDate,
+      harvestDate,
+      totalWeightKg,
+      qualityGrade,
+      gpsCoordinates,
+      farmAddress,
+      notes,
+    } = req.body;
+
+    // handle photo (base64 string or file buffer)
+    let imageCID = null;
+    if (req.file) {
+      const { path } = req.file;
+      const fileAdded = await ipfs.add(fs.readFileSync(path));
+      imageCID = fileAdded.cid.toString();
+    } else if (req.body.base64Image) {
+      const buffer = Buffer.from(
+        req.body.base64Image.replace(/^data:image\/\w+;base64,/, ""),
+        "base64"
+      );
+      const fileAdded = await ipfs.add(buffer);
+      imageCID = fileAdded.cid.toString();
+    }
+
+    // save to blockchain (example: store CID + batchId)
+    const blockchainHash = await BlockchainService.storeBatchOnChain({
+      batchId,
+      farmerId,
+      imageCID,
+      cropType,
+      qualityGrade,
+      gpsCoordinates,
+    });
+
+    const newBatch = new FarmerBatch({
+      farmerId,
+      batchId,
+      cropType,
+      variety,
+      seedSownDate,
+      harvestDate,
+      totalWeightKg,
+      remainingWeightKg: totalWeightKg,
+      qualityGrade,
+      gpsCoordinates,
+      farmAddress,
+      imageCID,
+      blockchainHash,
+      notes,
+    });
+
+    await newBatch.save();
+    res.status(201).json({ message: "Batch created successfully", data: newBatch });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error("Error creating batch:", err);
+    res.status(500).json({ message: "Failed to create batch", error: err.message });
   }
 };
 
-// GET all batches
+// Get all batches for a farmer
 exports.getBatches = async (req, res) => {
   try {
-    const batches = await FarmerBatch.find();
+    const farmerId = req.params.farmerId;
+    const batches = await FarmerBatch.find({ farmerId });
     res.json(batches);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// GET batch by batchId
-exports.getBatchById = async (req, res) => {
-  try {
-    const batch = await FarmerBatch.findOne({ batchId: req.params.batchId });
-    if (!batch) return res.status(404).json({ error: "Batch not found" });
-    res.json(batch);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// UPDATE batch
-exports.updateBatch = async (req, res) => {
-  try {
-    const updatedBatch = await FarmerBatch.findOneAndUpdate(
-      { batchId: req.params.batchId },
-      req.body,
-      { new: true }
-    );
-    if (!updatedBatch) return res.status(404).json({ error: "Batch not found" });
-    res.json({ message: "Batch updated successfully", data: updatedBatch });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-};
-
-// DELETE batch
-exports.deleteBatch = async (req, res) => {
-  try {
-    const deletedBatch = await FarmerBatch.findOneAndDelete({ batchId: req.params.batchId });
-    if (!deletedBatch) return res.status(404).json({ error: "Batch not found" });
-    res.json({ message: "Batch deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

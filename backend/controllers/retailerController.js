@@ -1,59 +1,66 @@
-const RetailerBatch = require("../models/retailerModel");
+const RetailerInventory = require("../models/retailerModel");
+const QRCode = require("qrcode");
 
-// Create new retailer batch
-exports.createRetailerBatch = async (req, res) => {
+// Receive distributor lot and add/update inventory
+exports.receiveStock = async (req, res) => {
   try {
-    const batch = new RetailerBatch(req.body);
-    const savedBatch = await batch.save();
-    res.status(201).json(savedBatch);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
+    const { retailerId, lotId, quantity, pricePerKg } = req.body;
+
+    // Check if the lot already is in inventory (merge logic)
+    let inv = await RetailerInventory.findOne({ retailerId, lotId });
+    if (inv) {
+      inv.quantity += quantity;
+      inv.pricePerKg = pricePerKg; // update if necessary
+      await inv.save();
+    } else {
+      inv = new RetailerInventory({ retailerId, lotId, quantity, pricePerKg });
+      await inv.save();
+    }
+    res.json({ success: true, inventory: inv });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Get all retailer batches
-exports.getAllRetailerBatches = async (req, res) => {
+// List inventory for a retailer
+exports.listInventory = async (req, res) => {
   try {
-    const batches = await RetailerBatch.find();
-    res.status(200).json(batches);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const { retailerId } = req.params;
+    const items = await RetailerInventory.find({ retailerId })
+      .populate('lotId')
+      .exec();
+    res.json({ success: true, items });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// Get a specific batch by subBatchId
-exports.getRetailerBatchById = async (req, res) => {
+// Generate QR for a product/lot
+exports.generateQR = async (req, res) => {
   try {
-    const batch = await RetailerBatch.findOne({ subBatchId: req.params.subBatchId });
-    if (!batch) return res.status(404).json({ error: "Batch not found" });
-    res.status(200).json(batch);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    const { inventoryId } = req.body;
 
-// Update batch by subBatchId
-exports.updateRetailerBatch = async (req, res) => {
-  try {
-    const updatedBatch = await RetailerBatch.findOneAndUpdate(
-      { subBatchId: req.params.subBatchId },
-      req.body,
-      { new: true }
-    );
-    if (!updatedBatch) return res.status(404).json({ error: "Batch not found" });
-    res.status(200).json(updatedBatch);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-};
+    const inv = await RetailerInventory.findById(inventoryId)
+      .populate("retailerId lotId")
+      .exec();
 
-// Delete batch by subBatchId
-exports.deleteRetailerBatch = async (req, res) => {
-  try {
-    const deletedBatch = await RetailerBatch.findOneAndDelete({ subBatchId: req.params.subBatchId });
-    if (!deletedBatch) return res.status(404).json({ error: "Batch not found" });
-    res.status(200).json({ message: "Batch deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    if (!inv) return res.status(404).json({ success: false, error: "Inventory not found" });
+
+    // Construct chain history to encode
+    const qrData = JSON.stringify({
+      retailerId: inv.retailerId._id,
+      lotId: inv.lotId._id,
+      quantity: inv.quantity,
+      pricePerKg: inv.pricePerKg
+      // add other chain metadata as needed
+    });
+    const qrImage = await QRCode.toDataURL(qrData);
+
+    inv.qrCode = qrImage;
+    await inv.save();
+
+    res.json({ success: true, qrCode: qrImage });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 };
