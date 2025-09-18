@@ -12,5 +12,5 @@ const distributorLotSchema = new mongoose.Schema({
   salePricePerKg: { type: Number, required: true },
   saleDate: { type: Date, default: Date.now },
 });
-
+//export
 module.exports = mongoose.model("DistributorLot", distributorLotSchema);
